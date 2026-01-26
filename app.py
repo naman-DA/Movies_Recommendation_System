@@ -5,6 +5,22 @@ import os
 
 API_KEY = os.getenv("TMDB_API_KEY")
 BASE_URL = "https://api.themoviedb.org/3/movie/"
+GDRIVE_URL = "https://drive.google.com/uc?id=1E-dXMJsnv77tdT_5T-OLX144bJYRhxfB"
+SIMILARITY_FILE = "similarity.pkl"
+
+@st.cache_resource
+def load_similarity():
+    if not os.path.exists(SIMILARITY_FILE):
+        with st.spinner("Downloading recommendation model..."):
+            r = requests.get(GDRIVE_URL, timeout=30)
+            r.raise_for_status()
+            with open(SIMILARITY_FILE, "wb") as f:
+                f.write(r.content)
+
+    with open(SIMILARITY_FILE, "rb") as f:
+        return pickle.load(f)
+
+similarity = load_similarity()
 
 @st.cache_data(show_spinner=False)
 def fetch_poster(movie_id):
