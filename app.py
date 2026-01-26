@@ -6,44 +6,19 @@ import os
 API_KEY = os.getenv("TMDB_API_KEY")
 BASE_URL = "https://api.themoviedb.org/3/movie/"
 SIMILARITY_FILE = "similarity.pkl"
-FILE_ID = "1E-dXMJsnv77tdT_5T-OLX144bJYRhxfB"
-
-
-def download_from_gdrive(file_id, destination):
-    URL = "https://docs.google.com/uc?export=download"
-    session = requests.Session()
-
-    response = session.get(URL, params={"id": file_id}, stream=True)
-    token = None
-
-    for key, value in response.cookies.items():
-        if key.startswith("download_warning"):
-            token = value
-
-    if token:
-        params = {"id": file_id, "confirm": token}
-        response = session.get(URL, params=params, stream=True)
-
-    with open(destination, "wb") as f:
-        for chunk in response.iter_content(32768):
-            if chunk:
-                f.write(chunk)
-
+MODEL_URL = "https://github.com/naman-DA/Movies_Recommendation_System/releases/download/v1.0/similarity.pkl"
 
 @st.cache_resource
 def load_similarity():
-    # If bad HTML file already exists, delete it
-    if os.path.exists(SIMILARITY_FILE):
-        with open(SIMILARITY_FILE, "rb") as f:
-            if f.read(1) == b"<":
-                os.remove(SIMILARITY_FILE)
-
-    # ⬇️ Download fresh file
     if not os.path.exists(SIMILARITY_FILE):
         with st.spinner("Downloading recommendation model..."):
-            download_from_gdrive(FILE_ID, SIMILARITY_FILE)
+            r = requests.get(MODEL_URL, stream=True, timeout=60)
+            r.raise_for_status()
+            with open(SIMILARITY_FILE, "wb") as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
 
-    # Safe pickle load
     with open(SIMILARITY_FILE, "rb") as f:
         return pickle.load(f)
 
