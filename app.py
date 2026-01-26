@@ -1,8 +1,9 @@
 import streamlit as st
 import pickle
 import requests
+import os
 
-API_KEY = "186ece5946d3e453129013405517e1d9"
+API_KEY = os.getenv("TMDB_API_KEY")
 BASE_URL = "https://api.themoviedb.org/3/movie/"
 
 @st.cache_data(show_spinner=False)
