@@ -5,18 +5,45 @@ import os
 
 API_KEY = os.getenv("TMDB_API_KEY")
 BASE_URL = "https://api.themoviedb.org/3/movie/"
-GDRIVE_URL = "https://drive.google.com/uc?id=1E-dXMJsnv77tdT_5T-OLX144bJYRhxfB"
 SIMILARITY_FILE = "similarity.pkl"
+FILE_ID = "1E-dXMJsnv77tdT_5T-OLX144bJYRhxfB"
+
+
+def download_from_gdrive(file_id, destination):
+    URL = "https://docs.google.com/uc?export=download"
+    session = requests.Session()
+
+    response = session.get(URL, params={"id": file_id}, stream=True)
+    token = None
+
+    for key, value in response.cookies.items():
+        if key.startswith("download_warning"):
+            token = value
+
+    if token:
+        params = {"id": file_id, "confirm": token}
+        response = session.get(URL, params=params, stream=True)
+
+    with open(destination, "wb") as f:
+        for chunk in response.iter_content(32768):
+            if chunk:
+                f.write(chunk)
+
 
 @st.cache_resource
 def load_similarity():
+    # If bad HTML file already exists, delete it
+    if os.path.exists(SIMILARITY_FILE):
+        with open(SIMILARITY_FILE, "rb") as f:
+            if f.read(1) == b"<":
+                os.remove(SIMILARITY_FILE)
+
+    # ⬇️ Download fresh file
     if not os.path.exists(SIMILARITY_FILE):
         with st.spinner("Downloading recommendation model..."):
-            r = requests.get(GDRIVE_URL, timeout=30)
-            r.raise_for_status()
-            with open(SIMILARITY_FILE, "wb") as f:
-                f.write(r.content)
+            download_from_gdrive(FILE_ID, SIMILARITY_FILE)
 
+    # Safe pickle load
     with open(SIMILARITY_FILE, "rb") as f:
         return pickle.load(f)
 
@@ -33,19 +60,17 @@ def fetch_poster(movie_id):
             },
             timeout=5
         )
-
         response.raise_for_status()
         data = response.json()
 
         poster_path = data.get("poster_path")
         if poster_path:
-            return "https://image.tmdb.org/t/p/w500/" + poster_path
+            return "https://image.tmdb.org/t/p/w500" + poster_path
         else:
-            return "https://via.placeholder.com/500x750?text=No+Poster"
+            return "https://via.placeholder.com/300x450?text=No+Poster"
 
-    except requests.exceptions.RequestException as e:
-        print("TMDB error:", e)
-        return "https://via.placeholder.com/500x750?text=Error"
+    except Exception as e:
+        return "https://via.placeholder.com/300x450?text=Error"
 
 def recommend(movie):
     movie_index = movies[movies['title'] == movie].index[0]
@@ -63,7 +88,6 @@ def recommend(movie):
     return recommended_movies, recommended_movies_posters
 
 movies = pickle.load(open('movies.pkl', 'rb'))
-similarity = pickle.load(open('similarity.pkl', 'rb'))
 st.title('Movie Recommendation System')
 
 selected_movie_name = st.selectbox(
@@ -74,20 +98,9 @@ selected_movie_name = st.selectbox(
 if st.button('Recommend'):
     names, posters = recommend(selected_movie_name)
 
-    col1, col2, col3, col4, col5 = st.columns(5)
+    cols = st.columns(5)
 
-    with col1:
-        st.header(names[0])
-        st.image(posters[0])
-    with col2:
-        st.header(names[1])
-        st.image(posters[1])
-    with col3:
-        st.header(names[2])
-        st.image(posters[2])
-    with col4:
-        st.header(names[3])
-        st.image(posters[3])
-    with col5:
-        st.header(names[4])
-        st.image(posters[4])
+    for col, name, poster in zip(cols, names, posters):
+        with col:
+            st.image(poster, use_container_width=True)
+            st.markdown(f"**{name}**")
