@@ -47,9 +47,11 @@ The system recommends similar movies based on metadata similarity and displays p
 ## Project Structure
 
 ├── app.py # Streamlit application
+
 ├── requirements.txt # Dependencies
+
 ├── movies.pkl # Movie metadata
-├── similarity.pkl # Similarity matrix (hosted via GitHub Release)
+
 ├── similarity.pkl # Similarity matrix (hosted via GitHub Release)
 
 > Note: `similarity.pkl` is **not stored in the repository** due to GitHub’s size limit.  
