@@ -67,20 +67,10 @@ The API key is **not hardcoded** in the source code for security reasons.
 
 ---
 
-## 📦 Model Handling (Important)
+## Model Handling (Important)
 
 - The similarity matrix (`similarity.pkl`) is larger than 100 MB.
 - It is hosted as a **GitHub Release asset**.
 - The application downloads and caches the model at runtime.
 
 This approach avoids GitHub size limits and follows real-world ML deployment practices.
-
----
-
-## 🧪 Local Setup (Optional)
-
-git clone https://github.com/your-username/Movies_Recommandation_System.git
-cd Movies_Recommandation_System
-pip install -r requirements.txt
-streamlit run app.py
-
